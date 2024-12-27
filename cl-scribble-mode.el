@@ -92,23 +92,21 @@
   "Syntax table for `cl-scribble-mode'.")
 
 (defvar cl-scribble-mode-font-lock-keywords
-  `((,(rx bol (group "#lang") (+ space) (group (1+ not-newline)))
-     (1 font-lock-keyword-face)
-     (2 font-lock-variable-name-face))
-    ;; keyword arguments
+  `(;; keyword arguments
     (,(rx (group "#:" (+ (not (any space ")")))))
-     (1 font-lock-keyword-face))
-    ;; #t #f
-    (,(regexp-opt '("#t" "#true" "#f" "#false") 'symbols)
-     (1 font-lock-constant-face))
-    (,(rx (group "@" (+ (not (any space "[" "{" "("))))) ; FIXME
-     (1 font-lock-function-name-face))
+     (1 font-lock-builtin-face))
     (,(rx (or space "(" "[" "{") (group (zero-or-one "#") ":" (+ (not (any space ")" "]" "}")))))
-     (1 font-lock-keyword-face)))
+     (1 font-lock-builtin-face))
+    ;; t nil
+    (,(regexp-opt '("t" "nil") 'symbols)
+     (1 font-lock-constant-face))
+    ;; functions
+    (,(rx (group "@" (+ (not (any space "[" "{" "("))))) ; FIXME
+     (1 font-lock-function-name-face)))
   "Font lock for `cl-scribble-mode'.")
 
 ;;;###autoload
-(define-derived-mode cl-scribble-mode prog-mode "Scribble"
+(define-derived-mode cl-scribble-mode prog-mode "CL Scribble"
   "Major mode for editing scribble files.
 
 \\{cl-scribble-mode-map}"
@@ -126,30 +124,33 @@
 
 ;; Completions
 (defun cl-scribble-complete-sly-symbol ()
-  (let* ((thing (thing-at-point 'word))
-         (bounds (bounds-of-thing-at-point 'word)))
+  (let* ((thing (thing-at-point 'symbol))
+         (bounds (bounds-of-thing-at-point 'symbol)))
     (list (car bounds)
           (cdr bounds)
-          (car (funcall sly-complete-symbol-function thing)))))
+          (and thing
+               (car (funcall sly-complete-symbol-function thing))))))
 
 (defun cl-scribble-complete-slime-symbol ()
-  (let* ((thing (thing-at-point 'word))
-         (bounds (bounds-of-thing-at-point 'word)))
+  (let* ((thing (thing-at-point 'symbol))
+         (bounds (bounds-of-thing-at-point 'symbol)))
     (list (car bounds)
           (cdr bounds)
-          (slime-simple-completions thing))))
+          (and thing
+               (slime-simple-completions thing)))))
 
 (defun cl-scribble--setup-completion ()
   (let ((complete-function nil)
         (buffers (buffer-list)))
-    (while (and buffers (not repl-symbol))
+    (while (and buffers (not complete-function))
       (let ((buffer (car buffers)))
         (with-current-buffer buffer
           (cond
            ((member 'sly-mode minor-mode-list)
             (setq complete-function 'cl-scribble-complete-sly-symbol))
            ((member 'slime-mode minor-mode-list)
-            (setq complete-function 'cl-scribble-complete-slime-symbol))))))
+            (setq complete-function 'cl-scribble-complete-slime-symbol)))))
+      (setq buffers (cdr buffers)))
     (when complete-function
       (setq-local completion-at-point-functions (list complete-function)))))
 
