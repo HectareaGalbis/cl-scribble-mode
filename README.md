@@ -1,17 +1,26 @@
-# scribble-mode - Major mode for editing Scribble documents
+# cl-scribble-mode - Major mode for editing Scribble documents with Common Lisp symbols
 
-*Author:* Mario Rodas <marsam@users.noreply.github.com><br>
-*Version:* 0.1<br>
+This is a fork that slightly changes scribble syntax to support Common Lisp symbols.
 
-A major mode for editing Scribble documents.
+What's more, it enables autocompletion from Sly/Slime.
 
-You can install [geiser][] to `scribble-mode-hook` to eldoc and auto
-completion support:
+Tested only with `Corfu`.
 
-        (add-hook 'scribble-mode-hook #'geiser-mode)
+If you find something that can be enhanced or you find a problem, don't hesitate to post an issue.
 
-[geiser]: http://www.nongnu.org/geiser/
+## Installation
 
+Clone this project into your emacs configuration.
 
----
-Converted from `scribble-mode.el` by [*el2markdown*](https://github.com/Lindydancer/el2markdown).
+If you are under `~/.emacs.d`:
+
+``` shell
+git clone git@github.com:HectareaGalbis/cl-scribble-mode.git
+```
+
+Now, in your `init.el` file, load `cl-scribble-mode.el` after `slime` or `sly` are loaded:
+
+``` emacs-lisp
+(add-to-list 'load-path (concat user-emacs-directory "cl-scribble-mode/"))
+(load "cl-scribble-mode")
+```
