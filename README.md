@@ -12,8 +12,6 @@ If you find something that can be enhanced or you find a problem, don't hesitate
 
 Clone this project into your emacs configuration.
 
-If you are under `~/.emacs.d`:
-
 ``` shell
 git clone git@github.com:HectareaGalbis/cl-scribble-mode.git
 ```
