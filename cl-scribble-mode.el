@@ -1,4 +1,4 @@
-;;; scribble-mode.el --- Major mode for editing Scribble documents -*- lexical-binding: t; -*-
+;;; cl-scribble-mode.el --- Major mode for editing Scribble documents -*- lexical-binding: t; -*-
 
 ;; Copyright (c) 2014 Mario Rodas <marsam@users.noreply.github.com>
 
@@ -37,17 +37,17 @@
 
 ;;; Code:
 
-(defgroup scribble-mode nil
+(defgroup cl-scribble-mode nil
   "Major mode for editing Scribble documents."
-  :prefix "scribble-mode-"
+  :prefix "cl-scribble-mode-"
   :group 'languages)
 
-(defcustom scribble-mode-executable "scribble"
+(defcustom cl-scribble-mode-executable "scribble"
   "Path to scribble executable."
   :type 'string
-  :group 'scribble-mode)
+  :group 'cl-scribble-mode)
 
-(defvar scribble-mode-imenu-generic-expression
+(defvar cl-scribble-mode-imenu-generic-expression
   `(("Title"
      ,(rx "@title" (? (: "[" (* (not (any "]")))) "]") "{" (group (+ (not (any "}")))) "}")
      1)
@@ -55,7 +55,7 @@
      ,(rx "@" (* "sub") "section" (? (: "[" (* (not (any "]")))) "]") "{" (group (+ (not (any "}")))) "}")
      1)))
 
-(defvar scribble-mode-syntax-table
+(defvar cl-scribble-mode-syntax-table
   (let ((table (make-syntax-table)))
     ;; Whitespace
     (modify-syntax-entry ?\t "    " table)
@@ -72,6 +72,7 @@
     (modify-syntax-entry ?` "'   " table)
     (modify-syntax-entry ?, "'   " table)
     (modify-syntax-entry ?@ "'   " table)
+    (modify-syntax-entry ?: "_ " table)
 
     ;; Comments
     (modify-syntax-entry ?\@ "' 1" table)
@@ -88,9 +89,9 @@
     (modify-syntax-entry ?\( "()  " table)
     (modify-syntax-entry ?\) ")(  " table)
     table)
-  "Syntax table for `scribble-mode'.")
+  "Syntax table for `cl-scribble-mode'.")
 
-(defvar scribble-mode-font-lock-keywords
+(defvar cl-scribble-mode-font-lock-keywords
   `((,(rx bol (group "#lang") (+ space) (group (1+ not-newline)))
      (1 font-lock-keyword-face)
      (2 font-lock-variable-name-face))
@@ -101,26 +102,70 @@
     (,(regexp-opt '("#t" "#true" "#f" "#false") 'symbols)
      (1 font-lock-constant-face))
     (,(rx (group "@" (+ (not (any space "[" "{" "("))))) ; FIXME
-     (1 font-lock-function-name-face)))
-  "Font lock for `scribble-mode'.")
+     (1 font-lock-function-name-face))
+    (,(rx (or space "(" "[" "{") (group (zero-or-one "#") ":" (+ (not (any space ")" "]" "}")))))
+     (1 font-lock-keyword-face)))
+  "Font lock for `cl-scribble-mode'.")
 
 ;;;###autoload
-(define-derived-mode scribble-mode prog-mode "Scribble"
+(define-derived-mode cl-scribble-mode prog-mode "Scribble"
   "Major mode for editing scribble files.
 
-\\{scribble-mode-map}"
+\\{cl-scribble-mode-map}"
   (set (make-local-variable 'comment-start) "@;")
   (set (make-local-variable 'comment-end) "")
   (set (make-local-variable 'comment-multi-line) nil)
   (set (make-local-variable 'font-lock-defaults)
-       '(scribble-mode-font-lock-keywords))
+       '(cl-scribble-mode-font-lock-keywords))
   (set (make-local-variable 'imenu-generic-expression)
-       scribble-mode-imenu-generic-expression)
+       cl-scribble-mode-imenu-generic-expression)
   (imenu-add-to-menubar "Contents"))
 
 ;;;###autoload
-(add-to-list 'auto-mode-alist '("\\.scrbl\\'" . scribble-mode))
+(add-to-list 'auto-mode-alist '("\\.scrbl\\'" . cl-scribble-mode))
 
-(provide 'scribble-mode)
+;; Completions
+(defun cl-scribble-complete-sly-symbol ()
+  (let* ((thing (thing-at-point 'word))
+         (bounds (bounds-of-thing-at-point 'word)))
+    (list (car bounds)
+          (cdr bounds)
+          (car (funcall sly-complete-symbol-function thing)))))
 
-;;; scribble-mode.el ends here
+(defun cl-scribble-complete-slime-symbol ()
+  (let* ((thing (thing-at-point 'word))
+         (bounds (bounds-of-thing-at-point 'word)))
+    (list (car bounds)
+          (cdr bounds)
+          (slime-simple-completions thing))))
+
+(defun cl-scribble--setup-completion ()
+  (let ((complete-function nil)
+        (buffers (buffer-list)))
+    (while (and buffers (not repl-symbol))
+      (let ((buffer (car buffers)))
+        (with-current-buffer buffer
+          (cond
+           ((member 'sly-mode minor-mode-list)
+            (setq complete-function 'cl-scribble-complete-sly-symbol))
+           ((member 'slime-mode minor-mode-list)
+            (setq complete-function 'cl-scribble-complete-slime-symbol))))))
+    (when complete-function
+      (setq-local completion-at-point-functions (list complete-function)))))
+
+(add-hook 'cl-scribble-mode-hook 'cl-scribble--setup-completion)
+
+(defun cl-scribble--setup-repl-initialization (complete-function)
+  (dolist (buffer (buffer-list))
+    (with-current-buffer buffer
+      (when (eq major-mode 'cl-scribble-mode)
+        (setq-local completion-at-point-functions (list complete-function))))))
+
+(add-hook 'sly-mode-hook (lambda ()
+                           (cl-scribble--setup-repl-initialization 'cl-scribble-complete-sly-symbol)))
+(add-hook 'slime-mode-hook (lambda ()
+                             (cl-scribble--setup-repl-initialization 'cl-scribble-complete-slime-symbol)))
+
+(provide 'cl-scribble-mode)
+
+;;; cl-scribble-mode.el ends here
