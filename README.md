@@ -4,9 +4,13 @@ This is a fork that slightly changes scribble syntax to support Common Lisp symb
 
 What's more, it enables autocompletion from Sly/Slime.
 
+If you find something that can be enhanced or you find a problem, don't hesitate to post an issue.
+
 Tested only with `Corfu`.
 
-If you find something that can be enhanced or you find a problem, don't hesitate to post an issue.
+## Example
+
+<img src="/images/cl-scribble-example.png" alt="CL Scribble example">
 
 ## Installation
 
