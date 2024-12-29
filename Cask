@@ -1,7 +1,7 @@
 (source gnu)
 (source melpa)
 
-(package-file "scribble-mode.el")
+(package-file "cl-scribble-mode.el")
 
 (development
  (depends-on "ert")
