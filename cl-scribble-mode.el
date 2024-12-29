@@ -92,16 +92,14 @@
   "Syntax table for `cl-scribble-mode'.")
 
 (defvar cl-scribble-mode-font-lock-keywords
-  `(;; keyword arguments
-    (,(rx (group "#:" (+ (not (any space ")")))))
-     (1 font-lock-builtin-face))
+  `(;; keywords
     (,(rx (or space "(" "[" "{") (group (zero-or-one "#") ":" (+ (not (any space ")" "]" "}")))))
      (1 font-lock-builtin-face))
     ;; t nil
     (,(regexp-opt '("t" "nil") 'symbols)
      (1 font-lock-constant-face))
     ;; functions
-    (,(rx (group "@" (+ (not (any space "[" "{" "("))))) ; FIXME
+    (,(rx (group "@" (+ (not (any space "[" "{" "(")))))
      (1 font-lock-function-name-face)))
   "Font lock for `cl-scribble-mode'.")
 
